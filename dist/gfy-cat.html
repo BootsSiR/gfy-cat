@@ -8,8 +8,8 @@
             <core-ajax url="http://upload.gfycat.com/transcode?fetchUrl={{src | cleanSrcUrl}}" id="gfyAjax" handleAs="json"></core-ajax>
         </template>
         <div id="gfyContainer" _style="width:{{ width }};" on-mouseup="{{toggleState}}" on-mouseover="{{hoverHandle}}" on-mouseout="{{hoverOutHandle}}">
-            <video autoplay width="100%" id="vid" src="//zippy.gfycat.com/{{gfyName}}{{ext}}"></video>
-            <video hidden width="100%" id="vidReverse" src="//zippy.gfycat.com/{{gfyName}}-reverse{{ext}}"></video>
+            <video autoplay width="100%" id="vid" src="//{{gfyContentHost}}.gfycat.com/{{gfyName}}{{ext}}"></video>
+            <video hidden width="100%" id="vidReverse" src="//{{gfyContentHost}}.gfycat.com/{{gfyName}}-reverse{{ext}}"></video>
             <div class="clearfix"></div>
             <playpause-svg stroke="{{color}}" class="{{visibility}}" strokeWidth="{{fill ? 0:strokeWidth}}" fill="{{fill ? color:'transparent'}}" id="playPauseSvg"></playpause-svg>
             <div class="gfyCtrl {{visibility}}" id="gfyCtrlBox" style="-webkit-flex-flow: column nowrap; flex-flow:column nowrap; -webkit-justify-content:space-around; justify-content:space-around;">
@@ -102,6 +102,19 @@
                 if(this.src && !this.src.match(/(\.gifv|\.webm|\.mp4)$/)){          //if src defined, that's not a video, fetch converted gfyName
                     this.$.gfyAjax.addEventListener("core-response", function(e) {
                             this.gfyName=e.detail.response.gfyName;
+
+                            // content can resize on different servers based on image size.  Original code assumed zippy, this code attempts to hackishly figure out the proper server
+                            // {"gfyname":"MediumPitifulCicada","gfyName":"MediumPitifulCicada","gfysize":2229323,"gifSize":11072939,"gifWidth":960,"mp4Url":"http:\/\/fat.gfycat.com\/MediumPitifulCicada.mp4","frameRate":59,"webmUrl":"http:\/\/fat.gfycat.com\/MediumPitifulCicada.webm","gifUrl":"http:\/\/giant.gfycat.com\/MediumPitifulCicada.gif"}
+                            this.gfyDetail = e.detail.response;
+                            if (this.gfyDetail.mp4Url != null && this.gfyDetail.mp4Url.indexOf('fat.gfycat.com') > -1) {
+                                this.gfyContentHost = 'fat';
+                            } else if (this.gfyDetail.webmUrl != null && this.gfyDetail.mp4Url.indexOf('zippy.gfycat.com') > -1) {
+                                this.gfyContentHost = 'zippy';
+                            } else if (this.gfyDetail.webmUrl != null && this.gfyDetail.mp4Url.indexOf('giant.gfycat.com') > -1) {
+                                this.gfyContentHost = 'giant'
+                            } else {
+                                this.gfyContentHost = 'zippy';
+                            }
                         }.bind(this));
                     this.$.gfyAjax.go();
                 }
